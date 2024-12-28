@@ -1,3 +1,14 @@
+roscpp_dep = dependency('roscpp', required : true)
+rostime_dep = dependency('rostime', required : true)
+rosconsole_dep = dependency('rosconsole', required : true)
+roscpp_serialization_dep = dependency('roscpp_serialization', required : true)
+image_transport_dep = dependency('image_transport', required : true)
+
+opencv_dep = declare_dependency(
+    include_directories: include_directories('/usr/include/boost/compute/interop/opencv'),
+    dependencies: dependency('opencv4', required: true)  # Ensure OpenCV4 is installed
+)
+
 rpicam_still = executable('rpicam-still', files('rpicam_still.cpp'),
                           include_directories : include_directories('..'),
                           dependencies: [libcamera_dep, boost_dep],
@@ -12,7 +23,15 @@ rpicam_vid = executable('rpicam-vid', files('rpicam_vid.cpp'),
 
 rpicam_hello = executable('rpicam-hello', files('rpicam_hello.cpp'),
                           include_directories : include_directories('..'),
-                          dependencies: libcamera_dep,
+                          dependencies: [
+                                libcamera_dep,
+                                roscpp_dep,
+                                rostime_dep,
+                                rosconsole_dep,
+                                roscpp_serialization_dep,
+                                image_transport_dep,
+                                opencv_dep
+                            ],
                           link_with : rpicam_app,
                           install : true)
 
