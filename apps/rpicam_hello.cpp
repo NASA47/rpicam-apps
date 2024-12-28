@@ -56,6 +56,11 @@ void event_loop(RPiCamApp &app) {
     app.ConfigureViewfinder();
     app.StartCamera();
 
+    struct timespec boot_ts, epoch_ts;
+    clock_gettime(CLOCK_BOOTTIME, &boot_ts);
+    clock_gettime(CLOCK_REALTIME, &epoch_ts);
+    uint64_t boot_epoch_offset = epoch_ts.tv_sec * 1000000000 + epoch_ts.tv_nsec - (boot_ts.tv_sec * 1000000000 + boot_ts.tv_nsec);
+
     while (ros::ok()) {
         RPiCamApp::Msg msg = app.Wait();
         if (msg.type == RPiCamApp::MsgType::Timeout) {
@@ -84,7 +89,12 @@ void event_loop(RPiCamApp &app) {
 
                 // Create a ROS Image message
                 sensor_msgs::Image img_msg;
-                img_msg.header.stamp = ros::Time::now();
+
+                auto sensor_ts = completed_request->metadata.get(controls::SensorTimestamp);
+                uint64_t sensor_ts_epoch = *sensor_ts + boot_epoch_offset;
+                ros::Time sensor_ros_ts(sensor_ts_epoch / 1000000000, sensor_ts_epoch % 1000000000);
+                img_msg.header.stamp = sensor_ros_ts;
+
                 img_msg.height = 720;
                 img_msg.width = 1280;
                 img_msg.encoding = "rgb8";
