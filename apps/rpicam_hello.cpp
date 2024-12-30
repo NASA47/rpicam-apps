@@ -22,31 +22,6 @@
 using namespace std::placeholders;
 
 
-
-// // Function to convert raw Bayer data to 8-bit RGB
-// cv::Mat processBayerData(const uint8_t* bayer_data, int width, int height) {
-//     // Create a cv::Mat from the raw Bayer data
-//     cv::Mat bayer_image(height, width, CV_8UC1, const_cast<uint8_t*>(bayer_data));
-
-//     // Convert Bayer pattern to RGB (BYR2 corresponds to COLOR_BayerBG2RGB in OpenCV)
-//     cv::Mat rgb_image;
-//     cv::cvtColor(bayer_image, rgb_image, cv::COLOR_BayerBG2RGB); // Adjust pattern if needed
-
-//     return rgb_image;
-// }
-
-// Function to convert raw Bayer data to 8-bit RGB
-cv::Mat processBayerData(const uint8_t* bayer_data, int width, int height) {
-    // Create a cv::Mat from the raw Bayer data
-    cv::Mat bayer_image(height, width, CV_8UC3, const_cast<uint8_t*>(bayer_data));
-
-    // // Convert Bayer pattern to RGB (BYR2 corresponds to COLOR_BayerBG2RGB in OpenCV)
-    // cv::Mat rgb_image;
-    // cv::cvtColor(bayer_image, rgb_image, cv::COLOR_BayerBG2RGB); // Adjust pattern if needed
-
-    return bayer_image;
-}
-
 void event_loop(RPiCamApp &app, Options *options) {
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
@@ -85,8 +60,6 @@ void event_loop(RPiCamApp &app, Options *options) {
             std::cout << "Buffer FD: " << plane.fd.get() << ", Length: " << plane.length << std::endl;
             std::cout << "Plane count: " << buffer->planes().size() << std::endl;
             if (bayer_data) {
-                // Process the Bayer data to get an 8-bit RGB image
-                // cv::Mat rgb_image = processBayerData(bayer_data, 1280, 720);
 
                 // Create a ROS Image message
                 sensor_msgs::Image img_msg;
@@ -105,7 +78,6 @@ void event_loop(RPiCamApp &app, Options *options) {
                 img_msg.data.resize(img_msg.step * img_msg.height);
                 memcpy(&img_msg.data[0], bayer_data, img_msg.step * img_msg.height);
                 
-
                 // Publish the image
                 pub.publish(img_msg);
             }
