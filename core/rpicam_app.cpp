@@ -201,6 +201,7 @@ void RPiCamApp::OpenCamera()
 				auto fd_ctrl = camera_->controls().find(&controls::FrameDurationLimits);
 				framerate = 1.0e6 / fd_ctrl->second.min().get<int64_t>();
 			}
+			std::cout << "pix:" << pix << ", size=" << size << std::endl;
 			sensor_modes_.emplace_back(size, pix, framerate);
 		}
 	}
@@ -264,6 +265,7 @@ Mode RPiCamApp::selectMode(const Mode &mode) const
 			score += penalty_FPS * std::abs(mode.framerate - std::min(sensor_mode.fps, mode.framerate));
 		score += penalty_BD * abs((int)(mode.bit_depth - sensor_mode.depth()));
 
+		std::cout << "sensor_mode.format: " << sensor_mode.format << ", score=" << score << std::endl;
 		if (score <= best_score)
 		{
 			best_score = score;
@@ -286,8 +288,8 @@ void RPiCamApp::ConfigureViewfinder()
 
 	StreamRoles stream_roles = { StreamRole::Viewfinder };
 	int stream_num = 1;
-	if (have_lores_stream)
-		stream_roles.push_back(StreamRole::Viewfinder), lores_stream_num = stream_num++;
+	// if (have_lores_stream)
+	// 	stream_roles.push_back(StreamRole::Viewfinder), lores_stream_num = stream_num++;
 	if (!options_->no_raw)
 		stream_roles.push_back(StreamRole::Raw), raw_stream_num = stream_num++;
 
@@ -295,65 +297,10 @@ void RPiCamApp::ConfigureViewfinder()
 	if (!configuration_)
 		throw std::runtime_error("failed to generate viewfinder configuration");
 
-	Size size(1280, 720);
+	Size size(options_->width, options_->height);
 	configuration_->at(0).pixelFormat = libcamera::formats::RGB888;
 	configuration_->at(0).size = size;
 	configuration_->at(0).bufferCount = configuration_->at(1).bufferCount;
-	// auto area = camera_->properties().get(properties::PixelArrayActiveAreas);
-	// if (options_->viewfinder_width && options_->viewfinder_height)
-	// 	size = Size(options_->viewfinder_width, options_->viewfinder_height);
-	// else if (area)
-	// {
-	// 	// The idea here is that most sensors will have a 2x2 binned mode that
-	// 	// we can pick up. If it doesn't, well, you can always specify the size
-	// 	// you want exactly with the viewfinder_width/height options_->
-	// 	size = (*area)[0].size() / 2;
-	// 	// If width and height were given, we might be switching to capture
-	// 	// afterwards - so try to match the field of view.
-	// 	if (options_->width && options_->height)
-	// 		size = size.boundedToAspectRatio(Size(options_->width, options_->height));
-	// 	size.alignDownTo(2, 2); // YUV420 will want to be even
-	// 	LOG(2, "Viewfinder size chosen is " << size.toString());
-	// }
-
-	// // Finally trim the image size to the largest that the preview can handle.
-	// Size max_size;
-	// preview_->MaxImageSize(max_size.width, max_size.height);
-	// if (max_size.width && max_size.height)
-	// {
-	// 	size.boundTo(max_size.boundedToAspectRatio(size)).alignDownTo(2, 2);
-	// 	LOG(2, "Final viewfinder size is " << size.toString());
-	// }
-
-	// // Now we get to override any of the default settings from the options_->
-	// configuration_->at(0).pixelFormat = libcamera::formats::YUV420;
-	// configuration_->at(0).size = size;
-	// if (options_->viewfinder_buffer_count > 0)
-	// 	configuration_->at(0).bufferCount = options_->viewfinder_buffer_count;
-
-	// if (have_lores_stream)
-	// {
-	// 	Size lores_size(options_->lores_width, options_->lores_height);
-	// 	lores_size.alignDownTo(2, 2);
-	// 	if (lores_size.width > size.width || lores_size.height > size.height)
-	// 		throw std::runtime_error("Low res image larger than viewfinder");
-	// 	configuration_->at(lores_stream_num).pixelFormat = lores_format_;
-	// 	configuration_->at(lores_stream_num).size = lores_size;
-	// 	configuration_->at(lores_stream_num).bufferCount = configuration_->at(0).bufferCount;
-	// }
-
-	// if (!options_->no_raw)
-	// {
-	// 	options_->viewfinder_mode.update(size, options_->framerate);
-	// 	options_->viewfinder_mode = selectMode(options_->viewfinder_mode);
-
-	// 	configuration_->at(raw_stream_num).size = options_->viewfinder_mode.Size();
-	// 	configuration_->at(raw_stream_num).pixelFormat = mode_to_pixel_format(options_->viewfinder_mode);
-	// 	configuration_->at(raw_stream_num).bufferCount = configuration_->at(0).bufferCount;
-	// 	configuration_->sensorConfig = libcamera::SensorConfiguration();
-	// 	configuration_->sensorConfig->outputSize = options_->viewfinder_mode.Size();
-	// 	configuration_->sensorConfig->bitDepth = options_->viewfinder_mode.bit_depth;
-	// }
 
 	configuration_->orientation = libcamera::Orientation::Rotate0 * options_->transform;
 
@@ -363,10 +310,22 @@ void RPiCamApp::ConfigureViewfinder()
 	setupCapture();
 
 	streams_["viewfinder"] = configuration_->at(0).stream();
-	if (have_lores_stream)
-		streams_["lores"] = configuration_->at(lores_stream_num).stream();
-	if (!options_->no_raw)
-		streams_["raw"] = configuration_->at(raw_stream_num).stream();
+	// if (have_lores_stream){
+	// 	std::cout << "lores" << std::endl;
+	// 	streams_["lores"] = configuration_->at(lores_stream_num).stream();}
+		// options_->mode.update(configuration_->at(0).size, options_->framerate);
+		// options_->mode = selectMode(options_->mode);
+
+		// configuration_->at(1).size = options_->mode.Size();
+		// configuration_->at(1).pixelFormat = mode_to_pixel_format(options_->mode);
+		// configuration_->sensorConfig = libcamera::SensorConfiguration();
+		// configuration_->sensorConfig->outputSize = options_->mode.Size();
+		// configuration_->sensorConfig->bitDepth = options_->mode.bit_depth;
+		// configuration_->at(1).bufferCount = configuration_->at(0).bufferCount;
+
+	if (!options_->no_raw){
+		std::cout << "no_raw" << std::endl;
+		streams_["raw"] = configuration_->at(raw_stream_num).stream();}
 
 	post_processor_.Configure();
 

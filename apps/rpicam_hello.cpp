@@ -47,9 +47,10 @@ cv::Mat processBayerData(const uint8_t* bayer_data, int width, int height) {
     return bayer_image;
 }
 
-void event_loop(RPiCamApp &app) {
+void event_loop(RPiCamApp &app, Options *options) {
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
+    // Second argument is the size of publishing queue
     image_transport::Publisher pub = it.advertise("camera/image_raw", 10);
 
     app.OpenCamera();
@@ -95,15 +96,15 @@ void event_loop(RPiCamApp &app) {
                 ros::Time sensor_ros_ts(sensor_ts_epoch / 1000000000, sensor_ts_epoch % 1000000000);
                 img_msg.header.stamp = sensor_ros_ts;
 
-                img_msg.height = 720;
-                img_msg.width = 1280;
+                img_msg.height = options->height;
+                img_msg.width = options->width;
                 img_msg.encoding = "rgb8";
                 img_msg.is_bigendian = false;
                 img_msg.step = img_msg.width * 3;
-                // memcpy(img_msg.data.data(), rgb_image.data, img_msg.data.size()); 
+                 
                 img_msg.data.resize(img_msg.step * img_msg.height);
                 memcpy(&img_msg.data[0], bayer_data, img_msg.step * img_msg.height);
-                // cv::imshow("test", rgb_image);
+                
 
                 // Publish the image
                 pub.publish(img_msg);
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
 			if (options->verbose >= 2)
 				options->Print();
 
-			event_loop(app);
+			event_loop(app, options);
 		}
 	}
 	catch (std::exception const &e)
