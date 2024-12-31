@@ -26,7 +26,7 @@ void event_loop(RPiCamApp &app, Options *options) {
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
     // Second argument is the size of publishing queue
-    image_transport::Publisher pub = it.advertise("camera/image_raw", 10);
+    image_transport::Publisher pub = it.advertise("camera/image_raw", 1);
 
     app.OpenCamera();
     app.ConfigureViewfinder();
@@ -67,7 +67,8 @@ void event_loop(RPiCamApp &app, Options *options) {
                 auto sensor_ts = completed_request->metadata.get(controls::SensorTimestamp);
                 uint64_t sensor_ts_epoch = *sensor_ts + boot_epoch_offset;
                 ros::Time sensor_ros_ts(sensor_ts_epoch / 1000000000, sensor_ts_epoch % 1000000000);
-                img_msg.header.stamp = sensor_ros_ts;
+                // img_msg.header.stamp = sensor_ros_ts;
+                img_msg.header.stamp = ros::Time::now();
 
                 img_msg.height = options->height;
                 img_msg.width = options->width;
